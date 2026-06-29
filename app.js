@@ -609,6 +609,8 @@ function setupButtons() {
   // Settings
   document.getElementById('btn-settings').addEventListener('click', openSettings);
   document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
+  document.getElementById('set-provider').addEventListener('change', e => applyProviderUI(e.target.value));
+  document.getElementById('btn-load-ollama').addEventListener('click', loadOllamaModels);
 
   // Project advisor
   document.getElementById('btn-run-advisor').addEventListener('click', runProjectAdvisor);
@@ -727,14 +729,14 @@ ${fileContent.substring(0, 2500)}`;
   try {
     const result = await window.archlog.analyze(prompt);
     if (!result.ok) {
-      if (result.error === 'NO_API_KEY') {
-        aiContent.innerHTML = 'לא הוגדר מפתח API. <a href="#" id="ai-open-settings">פתח הגדרות</a> כדי להזין מפתח Anthropic.';
+      if (isConfigError(result.error)) {
+        aiContent.innerHTML = aiErrorText(result.error) + '. <a href="#" id="ai-open-settings">פתח הגדרות</a>';
         document.getElementById('ai-open-settings')?.addEventListener('click', e => {
           e.preventDefault();
           openSettings();
         });
       } else {
-        aiContent.textContent = 'שגיאה בניתוח: ' + result.error;
+        aiContent.textContent = aiErrorText(result.error);
       }
       return;
     }
@@ -757,24 +759,70 @@ ${fileContent.substring(0, 2500)}`;
 }
 
 // ─── Settings (API key) ───────────────────────────────────────────────────────
+function applyProviderUI(provider) {
+  document.getElementById('settings-anthropic').style.display = provider === 'ollama' ? 'none' : 'block';
+  document.getElementById('settings-ollama').style.display    = provider === 'ollama' ? 'block' : 'none';
+}
+
 async function openSettings() {
   try {
     const s = await window.archlog.getSettings();
+    document.getElementById('set-provider').value = s.provider || 'anthropic';
     document.getElementById('set-key-status').textContent = s.hasKey
       ? '✓ מפתח שמור (הזן חדש כדי להחליף)'
       : 'לא הוגדר מפתח';
     document.getElementById('set-api-key').value = '';
     document.getElementById('set-model').value = s.model || 'claude-sonnet-4-6';
+    document.getElementById('set-ollama-url').value = s.ollamaUrl || 'http://localhost:11434';
+    document.getElementById('set-ollama-model').innerHTML = s.ollamaModel
+      ? `<option value="${esc(s.ollamaModel)}">${esc(s.ollamaModel)}</option>`
+      : '<option value="">— טען רשימה —</option>';
+    document.getElementById('set-ollama-status').textContent = '';
+    applyProviderUI(s.provider || 'anthropic');
   } catch { /* not running under Electron */ }
   openModal('modal-settings');
 }
 
+async function loadOllamaModels() {
+  const status = document.getElementById('set-ollama-status');
+  const sel = document.getElementById('set-ollama-model');
+  status.textContent = 'טוען...';
+  const res = await window.archlog.ollamaModels();
+  if (!res.ok) {
+    status.textContent = res.error === 'OLLAMA_UNREACHABLE'
+      ? 'Ollama לא זמין — ודא שהוא מותקן ורץ'
+      : 'שגיאה: ' + res.error;
+    return;
+  }
+  if (!res.models.length) {
+    status.textContent = 'לא נמצאו מודלים — הרץ למשל: ollama pull llama3.1';
+    sel.innerHTML = '<option value="">—</option>';
+    return;
+  }
+  sel.innerHTML = res.models.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  status.textContent = `נמצאו ${res.models.length} מודלים`;
+}
+
 async function saveSettings() {
   await window.archlog.saveSettings({
-    apiKey: document.getElementById('set-api-key').value.trim(),
-    model:  document.getElementById('set-model').value,
+    provider:    document.getElementById('set-provider').value,
+    apiKey:      document.getElementById('set-api-key').value.trim(),
+    model:       document.getElementById('set-model').value,
+    ollamaUrl:   document.getElementById('set-ollama-url').value.trim(),
+    ollamaModel: document.getElementById('set-ollama-model').value,
   });
   closeModal('modal-settings');
+}
+
+// Friendly text for the shared analyze() error codes (both providers)
+function aiErrorText(err) {
+  if (err === 'NO_API_KEY')        return 'לא הוגדר מפתח Anthropic API';
+  if (err === 'NO_OLLAMA_MODEL')   return 'לא נבחר מודל Ollama';
+  if (err === 'OLLAMA_UNREACHABLE') return 'Ollama לא זמין — ודא שהוא מותקן ורץ';
+  return 'שגיאה: ' + err;
+}
+function isConfigError(err) {
+  return err === 'NO_API_KEY' || err === 'NO_OLLAMA_MODEL';
 }
 
 // ─── Knowledge base ─────────────────────────────────────────────────────────
@@ -971,12 +1019,14 @@ ${kb ? '\nמאגר הידע של המשרד (נורמות/מנואלים רלו�
   try {
     const result = await window.archlog.analyze(prompt);
     if (!result.ok) {
-      out.innerHTML = result.error === 'NO_API_KEY'
-        ? 'לא הוגדר מפתח API. <a href="#" id="adv-open-settings">פתח הגדרות</a>.'
-        : 'שגיאה: ' + result.error;
-      document.getElementById('adv-open-settings')?.addEventListener('click', e => {
-        e.preventDefault(); openSettings();
-      });
+      if (isConfigError(result.error)) {
+        out.innerHTML = aiErrorText(result.error) + '. <a href="#" id="adv-open-settings">פתח הגדרות</a>';
+        document.getElementById('adv-open-settings')?.addEventListener('click', e => {
+          e.preventDefault(); openSettings();
+        });
+      } else {
+        out.textContent = aiErrorText(result.error);
+      }
       return;
     }
     out.textContent = result.text || 'אין תשובה.';
