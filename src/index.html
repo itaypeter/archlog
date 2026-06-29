@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArchLog</title>
+  <!-- Tabler Icons CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-mark">A</span>
+      <div>
+        <h1>ArchLog</h1>
+        <p>Schweizer Architektur</p>ltip
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">עבודה</div>
+      <button class="nav-item active" data-view="dashboard">
+        <i class="ti ti-layout-dashboard"></i> לוח בקרה
+      </button>
+      <button class="nav-item" data-view="projects">
+        <i class="ti ti-building"></i> פרויקטים
+      </button>
+      <button class="nav-item" data-view="log">
+        <i class="ti ti-file-text"></i> יומן יומי
+      </button>
+      <button class="nav-item" data-view="portfolio">
+        <i class="ti ti-briefcase"></i> פורטפוליו
+      </button>
+
+      <div class="nav-section">עזרים</div>
+      <button class="nav-item" data-view="norms">
+        <i class="ti ti-book"></i> נורמות SIA
+      </button>
+      <button class="nav-item" data-view="gis">
+        <i class="ti ti-map"></i> GIS קנטונלי
+      </button>
+      <button class="nav-item" data-view="timeline">
+        <i class="ti ti-timeline"></i> ציר זמן
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-ghost-sm" id="btn-export">
+        <i class="ti ti-download"></i> ייצוא גיבוי
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────── -->
+  <div class="main">
+
+    <header class="topbar">
+      <h2 id="view-title">לוח בקרה</h2>
+      <div class="topbar-actions">
+        <span id="today-date" class="topbar-date"></span>
+        <button class="btn-secondary" id="btn-new-project">
+          <i class="ti ti-building"></i> פרויקט
+        </button>
+        <button class="btn-primary" id="btn-new-log">
+          <i class="ti ti-plus"></i> תיעוד
+        </button>
+      </div>
+    </header>
+
+    <div class="content" id="content">
+      <!-- Views injected by app.js -->
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modals ───────────────────────────────────────────── -->
+<!-- Project Modal -->
+<div class="modal-overlay" id="modal-project" aria-hidden="true">
+  <div class="modal" role="dialog" aria-labelledby="modal-project-title">
+    <div class="modal-header">
+      <h3 id="modal-project-title">פרויקט חדש</h3>
+      <button class="modal-close" data-close="modal-project">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">שם הפרויקט</label>
+      <input class="form-input" id="proj-name" placeholder="Wohnhaus Müller, Lausanne" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">קנטון</label>
+        <select class="form-select" id="proj-canton">
+          <option>VD — Vaud</option><option>ZH — Zürich</option>
+          <option>BE — Bern</option><option>GE — Genève</option>
+          <option>BS — Basel-Stadt</option><option>AG — Aargau</option>
+          <option>LU — Luzern</option><option>SG — St. Gallen</option>
+          <option>TI — Ticino</option><option>VS — Valais</option>
+          <option>FR — Fribourg</option><option>GR — Graubünden</option>
+          <option>SO — Solothurn</option><option>BL — Basel-Landschaft</option>
+          <option>TG — Thurgau</option><option>NE — Neuchâtel</option>
+          <option>SZ — Schwyz</option><option>ZG — Zug</option>
+          <option>JU — Jura</option><option>SH — Schaffhausen</option>
+          <option>NW — Nidwalden</option><option>OW — Obwalden</option>
+          <option>GL — Glarus</option><option>UR — Uri</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">שלב נוכחי (SIA 102)</label>
+        <select class="form-select" id="proj-phase">
+          <option value="0">0 — Strategische Planung</option>
+          <option value="1">1 — Vorstudien</option>
+          <option value="2">2 — Vorprojekt</option>
+          <option value="3">3 — Bauprojekt</option>
+          <option value="4">4 — Baueingabe</option>
+          <option value="5">5 — Ausschreibung</option>
+          <option value="6">6 — Ausführungsplanung</option>
+          <option value="7">7 — Realisierung</option>
+          <option value="8">8 — Abschluss</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">תאריך התחלה</label>
+        <input class="form-input" type="date" id="proj-start" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">סוג בנייה</label>
+        <select class="form-select" id="proj-type">
+          <option>Wohnbau — מגורים</option>
+          <option>Gewerbebau — מסחרי</option>
+          <option>Umbau / Renovation</option>
+          <option>Öffentlicher Bau — ציבורי</option>
+          <option>Industriebau — תעשייה</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תיאור</label>
+      <textarea class="form-textarea" id="proj-desc" placeholder="תאר את הפרויקט בקצרה..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close="modal-project">ביטול</button>
+      <button class="btn-primary" id="btn-save-project">
+        <i class="ti ti-check"></i> שמור פרויקט
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Modal -->
+<div class="modal-overlay" id="modal-log" aria-hidden="true">
+  <div class="modal" role="dialog" aria-labelledby="modal-log-title">
+    <div class="modal-header">
+      <h3 id="modal-log-title">תיעוד עבודה</h3>
+      <button class="modal-close" data-close="modal-log">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">פרויקט</label>
+        <select class="form-select" id="log-project"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">שלב SIA 102</label>
+        <select class="form-select" id="log-phase">
+          <option value="0">0 — Strategische Planung</option>
+          <option value="1">1 — Vorstudien</option>
+          <option value="2">2 — Vorprojekt</option>
+          <option value="3">3 — Bauprojekt</option>
+          <option value="4">4 — Baueingabe</option>
+          <option value="5">5 — Ausschreibung</option>
+          <option value="6">6 — Ausführungsplanung</option>
+          <option value="7">7 — Realisierung</option>
+          <option value="8">8 — Abschluss</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">מה עשיתי</label>
+      <textarea class="form-textarea" id="log-desc" placeholder="תאר את העבודה שביצעת היום..."></textarea>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label class="form-label">תאריך</label>
+        <input class="form-input" type="date" id="log-date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">שעות</label>
+        <input class="form-input" type="number" id="log-hours" placeholder="2.5" min="0" step="0.5" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">נורמה</label>
+        <select class="form-select" id="log-norm">
+          <option value="">—</option>
+          <option>SIA 102</option><option>SIA 112</option>
+          <option>SIA 118</option><option>SIA 260</option>
+          <option>SIA 380/1</option><option>SIA 416</option>
+          <option>BKP / eBKP</option><option>NPK</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">קובץ מצורף</label>
+      <div class="file-drop" id="file-drop-zone">
+        <i class="ti ti-upload"></i>
+        <p>לחץ לבחירת קובץ (PDF, DWG, TXT, אימייל)</p>
+        <p class="file-name" id="log-file-name"></p>
+      </div>
+    </div>
+    <div class="ai-box" id="log-ai-box" style="display:none">
+      <div class="ai-box-title">
+        <i class="ti ti-sparkles"></i> ניתוח AI
+        <span class="dot-pulse" id="ai-spinner"></span>
+      </div>
+      <div class="ai-content" id="log-ai-content"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">מה למדתי</label>
+      <textarea class="form-textarea" id="log-learnings" placeholder="תובנה, כישור שנרכש, מה תעשה אחרת בפעם הבאה..."></textarea>
+    </div>
+    <div class="form-group checkbox-group">
+      <input type="checkbox" id="log-portfolio" />
+      <label for="log-portfolio">שמור לפורטפוליו</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close="modal-log">ביטול</button>
+      <button class="btn-primary" id="btn-save-log">
+        <i class="ti ti-check"></i> שמור תיעוד
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

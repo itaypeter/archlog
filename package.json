@@ -1,0 +1,16 @@
+{
+  "name": "archlog",
+  "version": "1.0.0",
+  "description": "יומן עבודה אדריכלי שוויצרי — SIA 102 / GIS",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  },
+  "keywords": ["architecture", "SIA", "switzerland", "worklog"],
+  "author": "your name",
+  "license": "MIT"
+}
