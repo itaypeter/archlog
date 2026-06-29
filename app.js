@@ -8,7 +8,7 @@ const PHASE_PCT = [2, 7, 16, 37, 39.5, 57.5, 73.5, 88.5, 100];
 const PHASE_CLS = ['ph-0','ph-1','ph-2','ph-3','ph-4','ph-5','ph-6','ph-7','ph-8'];
 
 // ─── State ──────────────────────────────────────────────────────────────────
-let state = { projects: [], logs: [] };
+let state = { projects: [], logs: [], knowledge: [] };
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -24,7 +24,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadData() {
   try {
     const saved = await window.archlog.loadData();
-    state = saved || { projects: [], logs: [] };
+    state = saved || { projects: [], logs: [], knowledge: [] };
+    if (!state.knowledge) state.knowledge = [];
   } catch (e) {
     console.warn('Could not load data:', e);
   }
@@ -58,15 +59,28 @@ function setActiveNav(viewName) {
 // ─── View Router ─────────────────────────────────────────────────────────────
 const VIEW_TITLES = {
   dashboard: 'לוח בקרה', projects: 'פרויקטים', log: 'יומן יומי',
-  portfolio: 'פורטפוליו', norms: 'נורמות SIA', gis: 'GIS קנטונלי', timeline: 'ציר זמן'
+  portfolio: 'פורטפוליו', knowledge: 'מאגר ידע', norms: 'נורמות SIA',
+  gis: 'GIS קנטונלי', timeline: 'ציר זמן'
 };
 
 function renderView(name) {
   document.getElementById('view-title').textContent = VIEW_TITLES[name] || name;
   const content = document.getElementById('content');
-  const views = { dashboard, projects, log, portfolio, norms, gis, timeline };
+  const views = { dashboard, projects, log, portfolio, knowledge, norms, gis, timeline };
   content.innerHTML = views[name] ? views[name]() : '<p>תצוגה לא נמצאה</p>';
   setActiveNav(name);
+  if (name === 'knowledge') updateVaultLabel();
+}
+
+async function updateVaultLabel() {
+  const el = document.getElementById('kb-vault-path');
+  if (!el) return;
+  try {
+    const s = await window.archlog.getSettings();
+    el.textContent = s.vaultPath ? `מחובר: ${s.vaultPath}` : 'לא חובר Vault';
+  } catch {
+    el.textContent = 'זמין רק באפליקציית Desktop';
+  }
 }
 
 // ─── Views ───────────────────────────────────────────────────────────────────
@@ -132,6 +146,38 @@ function portfolio() {
     <div class="section-title">פורטפוליו — תוכניות ומשימות לדוגמה (${items.length})</div>
     <div class="portfolio-grid">
       ${items.length ? items.map(portfolioCard).join('') : `<div style="grid-column:1/-1">${emptyState('ti-briefcase', 'סמן תיעודים כ"שמור לפורטפוליו"')}</div>`}
+    </div>
+  `;
+}
+
+function knowledge() {
+  const docs = state.knowledge || [];
+  return `
+    <div class="flex-between" style="margin-bottom:6px;">
+      <div class="section-title" style="margin:0">מאגר הידע של המשרד (${docs.length})</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="uploadFolder()"><i class="ti ti-folder"></i> תיקייה</button>
+        <button class="btn-primary" onclick="uploadFiles()"><i class="ti ti-upload"></i> העלה מסמכים</button>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+      העלה נורמות, מנואלים ומסמכי משרד. ה-AI ישתמש בהם כדי לנתח קבצים בצורה מדויקת יותר.
+    </p>
+
+    <div class="kb-vault" style="margin-bottom:16px;padding:12px 14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;">
+        <i class="ti ti-brand-obsidian"></i> סנכרון Obsidian Vault
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;" id="kb-vault-path">—</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-ghost-sm" onclick="pickVault()"><i class="ti ti-folder-open"></i> בחר Vault</button>
+        <button class="btn-ghost-sm" onclick="importVault()"><i class="ti ti-download"></i> ייבא הערות</button>
+        <button class="btn-ghost-sm" onclick="exportToVault()"><i class="ti ti-upload"></i> ייצא יומן ל-Vault</button>
+      </div>
+    </div>
+
+    <div class="card-list" id="kb-list">
+      ${docs.length ? docs.map(knowledgeCard).join('') : emptyState('ti-books', 'המאגר ריק — העלה מסמך ראשון')}
     </div>
   `;
 }
@@ -244,7 +290,7 @@ function projectCard(p) {
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">${esc(p.name)}</div>
+          <div class="card-title">${p.number ? `<span class="tag">${esc(p.number)}</span> ` : ''}${esc(p.name)}</div>
           <div class="card-meta">
             <span>${esc(p.canton)}</span>
             <span>${esc(p.type)}</span>
@@ -306,6 +352,27 @@ function portfolioCard(l) {
   `;
 }
 
+function knowledgeCard(d) {
+  const chars = (d.content || '').length;
+  const srcLabel = d.source === 'vault' ? 'Obsidian' : d.source === 'folder' ? 'תיקייה' : 'הועלה';
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${esc(d.title)}</div>
+          <div class="card-meta">
+            <span class="tag">${esc((d.ext || '').toUpperCase() || 'DOC')}</span>
+            <span>${srcLabel}</span>
+            <span>${chars.toLocaleString()} תווים</span>
+            ${chars === 0 ? '<span style="color:var(--text-muted)">(ללא טקסט קריא)</span>' : ''}
+          </div>
+        </div>
+        <button class="btn-ghost-sm" onclick="removeKnowledge(${d.id})"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+  `;
+}
+
 function emptyState(icon, text) {
   return `<div class="empty-state"><i class="ti ${icon}"></i><p>${text}</p></div>`;
 }
@@ -359,10 +426,15 @@ function setupButtons() {
   document.getElementById('btn-export').addEventListener('click', async () => {
     await window.archlog.exportBackup(state);
   });
+
+  // Settings
+  document.getElementById('btn-settings').addEventListener('click', openSettings);
+  document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
 }
 
 // ─── Project CRUD ─────────────────────────────────────────────────────────────
 function resetProjectModal() {
+  document.getElementById('proj-number').value = '';
   document.getElementById('proj-name').value = '';
   document.getElementById('proj-desc').value = '';
   document.getElementById('proj-start').value = todayISO();
@@ -375,6 +447,7 @@ async function saveProject() {
 
   state.projects.unshift({
     id: Date.now(),
+    number:  document.getElementById('proj-number').value.trim(),
     name,
     canton:  document.getElementById('proj-canton').value,
     phase:   parseInt(document.getElementById('proj-phase').value),
@@ -455,28 +528,33 @@ async function runAIAnalysis(fileContent) {
 
   const phase     = document.getElementById('log-phase').value;
   const phaseName = PHASES[parseInt(phase)];
+  const kb        = relevantKnowledge();
 
   const prompt = `אתה עוזר לאדריכל סטודנט שעובד במשרד בשוויץ. הוא נמצא בשלב "${phaseName}" (SIA 102 Phase ${phase}).
 בהתבסס על תוכן הקובץ הבא, ענה בעברית בצורה קצרה:
 1. סיכום: מה מכיל הקובץ (2 משפטים)
 2. נורמת SIA הרלוונטית
 3. תובנה: מה ניתן ללמוד / להשתמש בו
-
+${kb ? `\nהסתמך גם על מאגר הידע של המשרד (נורמות ומנואלים שהועלו):\n${kb}` : ''}
 תוכן הקובץ:
 ${fileContent.substring(0, 2500)}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 600,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || 'לא ניתן לנתח.';
+    const result = await window.archlog.analyze(prompt);
+    if (!result.ok) {
+      if (result.error === 'NO_API_KEY') {
+        aiContent.innerHTML = 'לא הוגדר מפתח API. <a href="#" id="ai-open-settings">פתח הגדרות</a> כדי להזין מפתח Anthropic.';
+        document.getElementById('ai-open-settings')?.addEventListener('click', e => {
+          e.preventDefault();
+          openSettings();
+        });
+      } else {
+        aiContent.textContent = 'שגיאה בניתוח: ' + result.error;
+      }
+      return;
+    }
+
+    const text = result.text || 'לא ניתן לנתח.';
     aiContent.textContent = text;
 
     // Auto-fill desc if empty
@@ -487,10 +565,139 @@ ${fileContent.substring(0, 2500)}`;
       }
     }
   } catch (err) {
-    aiContent.textContent = 'שגיאה בחיבור ל-AI. ודא שיש חיבור לאינטרנט.';
+    aiContent.textContent = 'שגיאה בחיבור ל-AI: ' + err.message;
   } finally {
     spinner.style.display = 'none';
   }
+}
+
+// ─── Settings (API key) ───────────────────────────────────────────────────────
+async function openSettings() {
+  try {
+    const s = await window.archlog.getSettings();
+    document.getElementById('set-key-status').textContent = s.hasKey
+      ? '✓ מפתח שמור (הזן חדש כדי להחליף)'
+      : 'לא הוגדר מפתח';
+    document.getElementById('set-api-key').value = '';
+    document.getElementById('set-model').value = s.model || 'claude-sonnet-4-6';
+  } catch { /* not running under Electron */ }
+  openModal('modal-settings');
+}
+
+async function saveSettings() {
+  await window.archlog.saveSettings({
+    apiKey: document.getElementById('set-api-key').value.trim(),
+    model:  document.getElementById('set-model').value,
+  });
+  closeModal('modal-settings');
+}
+
+// ─── Knowledge base ─────────────────────────────────────────────────────────
+function addDocs(files, source) {
+  for (const f of files) {
+    state.knowledge.unshift({
+      id:      Date.now() + Math.floor(Math.random() * 1000),
+      title:   f.fileName,
+      ext:     f.ext || (f.fileName.split('.').pop() || ''),
+      source,
+      path:    f.filePath || '',
+      content: f.content || '',
+      addedAt: todayISO(),
+    });
+  }
+  return files.length;
+}
+
+async function uploadFiles() {
+  const files = await window.archlog.openFiles();
+  if (!files || !files.length) return;
+  addDocs(files, 'upload');
+  await saveData();
+  renderView('knowledge');
+}
+
+async function uploadFolder() {
+  const files = await window.archlog.openFolder();
+  if (!files || !files.length) return;
+  addDocs(files, 'folder');
+  await saveData();
+  renderView('knowledge');
+}
+
+async function removeKnowledge(id) {
+  state.knowledge = state.knowledge.filter(d => d.id !== id);
+  await saveData();
+  renderView('knowledge');
+}
+
+// ─── Obsidian vault (two-way) ─────────────────────────────────────────────────
+async function pickVault() {
+  const p = await window.archlog.pickVault();
+  if (p) updateVaultLabel();
+}
+
+async function importVault() {
+  const res = await window.archlog.readVault();
+  if (!res.ok) {
+    alert(res.error === 'NO_VAULT' ? 'בחר תחילה תיקיית Vault' : 'שגיאה: ' + res.error);
+    return;
+  }
+  const existing = new Set(state.knowledge.map(d => d.path).filter(Boolean));
+  const fresh = res.notes.filter(n => !existing.has(n.filePath));
+  addDocs(fresh, 'vault');
+  await saveData();
+  renderView('knowledge');
+  alert(`יובאו ${fresh.length} הערות חדשות מ-Vault`);
+}
+
+async function exportToVault() {
+  if (!state.logs.length) { alert('אין רשומות יומן לייצוא'); return; }
+  const notes = state.logs.map(l => ({
+    fileName: `${l.date || 'log'}-${(l.projectName || 'log').replace(/\s+/g, '-')}-${l.id}.md`,
+    content:  logToMarkdown(l),
+  }));
+  const res = await window.archlog.writeVaultNotes(notes);
+  alert(res.ok
+    ? `יוצאו ${res.count} רשומות ל-${res.dir}`
+    : (res.error === 'NO_VAULT' ? 'בחר תחילה תיקיית Vault' : 'שגיאה: ' + res.error));
+}
+
+function logToMarkdown(l) {
+  return `---
+date: ${l.date || ''}
+project: ${l.projectName || ''}
+phase: ${PHASES[l.phase] || ''}
+hours: ${l.hours || 0}
+norm: ${l.norm || ''}
+---
+
+# ${(l.desc || '').split('\n')[0]}
+
+${l.desc || ''}
+${l.learnings ? '\n## מה למדתי\n\n' + l.learnings + '\n' : ''}`;
+}
+
+// Pick knowledge docs relevant to the current log entry, for the AI prompt
+function relevantKnowledge(maxChars = 4000) {
+  const docs = (state.knowledge || []).filter(d => d.content && d.content.length > 20);
+  if (!docs.length) return '';
+  const norm      = document.getElementById('log-norm').value;
+  const phaseName = PHASES[parseInt(document.getElementById('log-phase').value)] || '';
+  const terms     = [norm, phaseName].filter(Boolean).map(t => t.toLowerCase());
+  const scored = docs.map(d => {
+    const hay = (d.title + ' ' + d.content).toLowerCase();
+    const score = terms.reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
+    return { d, score };
+  }).sort((a, b) => b.score - a.score);
+
+  let out = '', used = 0;
+  for (const { d } of scored.slice(0, 3)) {
+    const snippet = d.content.substring(0, 1500);
+    if (used + snippet.length > maxChars) break;
+    out += `\n--- ${d.title} ---\n${snippet}\n`;
+    used += snippet.length;
+  }
+  return out;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
