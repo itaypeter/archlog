@@ -286,6 +286,48 @@
   </div>
 </div>
 
+<!-- Custom Norm Modal -->
+<div class="modal-overlay" id="modal-norm" aria-hidden="true">
+  <div class="modal" role="dialog" aria-labelledby="modal-norm-title">
+    <div class="modal-header">
+      <h3 id="modal-norm-title">הוסף נורמה</h3>
+      <button class="modal-close" data-close="modal-norm">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:0 0 34%;">
+        <label class="form-label">מספר</label>
+        <input class="form-input" id="cn-num" placeholder="SIA 271" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">כותרת</label>
+        <input class="form-input" id="cn-title" placeholder="Abdichtungen im Hochbau" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תיאור</label>
+      <input class="form-input" id="cn-desc" placeholder="במה עוסקת הנורמה" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">קטגוריה</label>
+        <input class="form-input" id="cn-cat" placeholder="מותאם אישית" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">קישור לרכישה</label>
+        <input class="form-input" id="cn-buy" placeholder="https://shop.sia.ch/..." />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close="modal-norm">ביטול</button>
+      <button class="btn-primary" id="btn-save-norm">
+        <i class="ti ti-check"></i> הוסף
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Project Advisor Modal -->
 <div class="modal-overlay" id="modal-advisor" aria-hidden="true">
   <div class="modal" role="dialog" aria-labelledby="advisor-title">
