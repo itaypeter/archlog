@@ -1,0 +1,32 @@
+{
+  "bugs": [
+    {
+      "id": 1,
+      "error_message": "AI file analysis never returns / 401-style failure",
+      "root_cause": "runAIAnalysis fetched api.anthropic.com directly from the renderer with no API key, no anthropic-version header, and no browser-access flag (CORS).",
+      "fix": "Moved the call to the Electron main process (ipc 'analyze') with x-api-key + anthropic-version headers; key stored in archlog-settings.json, never exposed to renderer; renderer calls window.archlog.analyze().",
+      "tags": ["ai", "electron", "ipc", "security"]
+    },
+    {
+      "id": 2,
+      "error_message": "PDF attachments produce garbage text in AI analysis",
+      "root_cause": "main.js read .pdf files as UTF-8; PDFs are binary, so content was unusable.",
+      "fix": "Added extractText() using pdf-parse for .pdf; plain UTF-8 only for text extensions (.txt/.eml/.md/.csv/...). Added pdf-parse to package.json dependencies.",
+      "tags": ["pdf", "knowledge-base", "parsing"]
+    },
+    {
+      "id": 3,
+      "error_message": "Stray markup '</div>ltip' rendered in sidebar header",
+      "root_cause": "Typo left in src/index.html line 21.",
+      "fix": "Removed the stray 'ltip' text.",
+      "tags": ["html", "typo"]
+    },
+    {
+      "id": 4,
+      "error_message": "Junk directory named '{src,assets}' in project root",
+      "root_cause": "Brace-expansion mishap from an earlier mkdir (quotes/no-brace-expansion).",
+      "fix": "rm -rf '{src,assets}' before first git commit.",
+      "tags": ["shell", "cleanup"]
+    }
+  ]
+}
