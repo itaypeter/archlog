@@ -262,21 +262,52 @@
       </button>
     </div>
     <div class="form-group">
-      <label class="form-label">מפתח Anthropic API</label>
-      <input class="form-input" type="password" id="set-api-key" placeholder="sk-ant-..." autocomplete="off" />
-      <p class="file-name" id="set-key-status"></p>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-        המפתח נשמר מקומית במחשב בלבד ומשמש לניתוח קבצים. השג מפתח ב-console.anthropic.com.
-      </p>
-    </div>
-    <div class="form-group">
-      <label class="form-label">מודל</label>
-      <select class="form-select" id="set-model">
-        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (מומלץ — מהיר וחסכוני)</option>
-        <option value="claude-opus-4-8">Claude Opus 4.8 (חזק יותר, יקר יותר)</option>
-        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (הזול ביותר)</option>
+      <label class="form-label">מנוע AI</label>
+      <select class="form-select" id="set-provider">
+        <option value="anthropic">ענן — Claude (איכותי, עלות לפי שימוש)</option>
+        <option value="ollama">מקומי — Ollama (חינמי ופרטי, רץ על המחשב)</option>
       </select>
     </div>
+
+    <!-- Anthropic (cloud) -->
+    <div id="settings-anthropic">
+      <div class="form-group">
+        <label class="form-label">מפתח Anthropic API</label>
+        <input class="form-input" type="password" id="set-api-key" placeholder="sk-ant-..." autocomplete="off" />
+        <p class="file-name" id="set-key-status"></p>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          המפתח נשמר מקומית במחשב בלבד. השג מפתח ב-console.anthropic.com.
+        </p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">מודל</label>
+        <select class="form-select" id="set-model">
+          <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (מומלץ — מהיר וחסכוני)</option>
+          <option value="claude-opus-4-8">Claude Opus 4.8 (חזק יותר, יקר יותר)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (הזול ביותר)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Ollama (local) -->
+    <div id="settings-ollama" style="display:none">
+      <div class="form-group">
+        <label class="form-label">כתובת Ollama</label>
+        <input class="form-input" id="set-ollama-url" placeholder="http://localhost:11434" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">מודל מקומי</label>
+        <div style="display:flex;gap:8px;">
+          <select class="form-select" id="set-ollama-model" style="flex:1"></select>
+          <button class="btn-ghost-sm" id="btn-load-ollama" type="button"><i class="ti ti-refresh"></i> טען רשימה</button>
+        </div>
+        <p class="file-name" id="set-ollama-status"></p>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          התקן את Ollama מ-ollama.com והרץ למשל <code>ollama pull llama3.1</code>. הנתונים לא יוצאים מהמחשב.
+        </p>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-ghost" data-close="modal-settings">ביטול</button>
       <button class="btn-primary" id="btn-save-settings">

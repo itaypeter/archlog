@@ -6,17 +6,26 @@ const fs = require('fs');
 const DATA_FILE     = path.join(app.getPath('userData'), 'archlog-data.json');
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'archlog-settings.json');
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_MODEL  = 'claude-sonnet-4-6';
+const DEFAULT_OLLAMA = 'http://localhost:11434';
 
 function readSettings() {
+  let s = {};
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
-      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      s = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
     }
   } catch (err) {
     console.error('Error reading settings:', err);
   }
-  return { apiKey: '', model: DEFAULT_MODEL, vaultPath: '' };
+  return {
+    provider:    s.provider || 'anthropic',   // 'anthropic' | 'ollama'
+    apiKey:      s.apiKey || '',
+    model:       s.model || DEFAULT_MODEL,
+    ollamaUrl:   s.ollamaUrl || DEFAULT_OLLAMA,
+    ollamaModel: s.ollamaModel || '',
+    vaultPath:   s.vaultPath || '',
+  };
 }
 
 // Extensions whose text we can read directly
@@ -223,17 +232,27 @@ ipcMain.handle('write-vault-notes', async (event, notes) => {
 ipcMain.handle('get-settings', () => {
   const s = readSettings();
   // Expose only whether a key exists — not the key itself
-  return { hasKey: !!s.apiKey, model: s.model || DEFAULT_MODEL, vaultPath: s.vaultPath || '' };
+  return {
+    provider:    s.provider,
+    hasKey:      !!s.apiKey,
+    model:       s.model,
+    ollamaUrl:   s.ollamaUrl,
+    ollamaModel: s.ollamaModel,
+    vaultPath:   s.vaultPath,
+  };
 });
 
 ipcMain.handle('save-settings', (event, settings) => {
   try {
     const current = readSettings();
     const next = {
+      provider:    settings.provider || current.provider,
       // keep existing key unless a non-empty new one is provided
-      apiKey: (settings.apiKey && settings.apiKey.trim()) || current.apiKey || '',
-      model:  settings.model || current.model || DEFAULT_MODEL,
-      vaultPath: settings.vaultPath !== undefined ? settings.vaultPath : (current.vaultPath || ''),
+      apiKey:      (settings.apiKey && settings.apiKey.trim()) || current.apiKey || '',
+      model:       settings.model || current.model || DEFAULT_MODEL,
+      ollamaUrl:   settings.ollamaUrl || current.ollamaUrl || DEFAULT_OLLAMA,
+      ollamaModel: settings.ollamaModel !== undefined ? settings.ollamaModel : current.ollamaModel,
+      vaultPath:   settings.vaultPath !== undefined ? settings.vaultPath : (current.vaultPath || ''),
     };
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(next, null, 2), 'utf-8');
     return { ok: true };
@@ -243,34 +262,68 @@ ipcMain.handle('save-settings', (event, settings) => {
   }
 });
 
-// ─── IPC: AI analysis (Anthropic, from main process) ─────────────────────────
-ipcMain.handle('analyze', async (event, { prompt }) => {
-  const { apiKey, model } = readSettings();
-  if (!apiKey) {
-    return { ok: false, error: 'NO_API_KEY' };
+// List locally installed Ollama models (also doubles as a connection test)
+ipcMain.handle('ollama-models', async () => {
+  const { ollamaUrl } = readSettings();
+  try {
+    const res = await fetch(`${ollamaUrl.replace(/\/$/, '')}/api/tags`);
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+    const data = await res.json();
+    return { ok: true, models: (data.models || []).map(m => m.name) };
+  } catch (err) {
+    return { ok: false, error: 'OLLAMA_UNREACHABLE' };
   }
+});
+
+// ─── IPC: AI analysis — pluggable backend (Anthropic cloud or local Ollama) ───
+// Both providers implement the same contract: (prompt) -> { ok, text } | { ok:false, error }
+async function analyzeAnthropic(prompt, s) {
+  if (!s.apiKey) return { ok: false, error: 'NO_API_KEY' };
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': s.apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: model || DEFAULT_MODEL,
+        model: s.model || DEFAULT_MODEL,
         max_tokens: 600,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
     const data = await res.json();
-    if (!res.ok) {
-      return { ok: false, error: data?.error?.message || `HTTP ${res.status}` };
-    }
+    if (!res.ok) return { ok: false, error: data?.error?.message || `HTTP ${res.status}` };
     return { ok: true, text: data.content?.[0]?.text || '' };
   } catch (err) {
     return { ok: false, error: err.message };
   }
+}
+
+async function analyzeOllama(prompt, s) {
+  if (!s.ollamaModel) return { ok: false, error: 'NO_OLLAMA_MODEL' };
+  try {
+    const res = await fetch(`${s.ollamaUrl.replace(/\/$/, '')}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: s.ollamaModel,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+      }),
+    });
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+    const data = await res.json();
+    return { ok: true, text: data.message?.content || '' };
+  } catch (err) {
+    return { ok: false, error: 'OLLAMA_UNREACHABLE' };
+  }
+}
+
+ipcMain.handle('analyze', async (event, { prompt }) => {
+  const s = readSettings();
+  return s.provider === 'ollama' ? analyzeOllama(prompt, s) : analyzeAnthropic(prompt, s);
 });
 
 // Export data as JSON backup

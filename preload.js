@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('archlog', {
   getSettings:  ()         => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   analyze:      (prompt)   => ipcRenderer.invoke('analyze', { prompt }),
+  ollamaModels: ()         => ipcRenderer.invoke('ollama-models'),
   // Knowledge base
   openFiles:    ()         => ipcRenderer.invoke('open-files'),
   openFolder:   ()         => ipcRenderer.invoke('open-folder'),
