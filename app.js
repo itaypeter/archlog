@@ -30,7 +30,7 @@ const PHASE_DELIVERABLES = [
 ];
 
 // ─── State ──────────────────────────────────────────────────────────────────
-let state = { projects: [], logs: [], knowledge: [] };
+let state = { projects: [], logs: [], knowledge: [], customNorms: [], normOwned: {} };
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -48,6 +48,8 @@ async function loadData() {
     const saved = await window.archlog.loadData();
     state = saved || { projects: [], logs: [], knowledge: [] };
     if (!state.knowledge) state.knowledge = [];
+    if (!state.customNorms) state.customNorms = [];
+    if (!state.normOwned) state.normOwned = {};
   } catch (e) {
     console.warn('Could not load data:', e);
   }
@@ -273,52 +275,117 @@ function officeHasNorm(n) {
   });
 }
 
+// A norm counts as owned if a file matches it OR it was marked manually
+function normIsOwned(n) {
+  return officeHasNorm(n) || !!(state.normOwned && state.normOwned[n.num]);
+}
+
 function normRow(n) {
-  const has = officeHasNorm(n);
-  const buy = n.vendor === 'crb'
-    ? 'https://www.crb.ch'
-    : 'https://shop.sia.ch/?s=' + encodeURIComponent(n.num);
+  const auto   = officeHasNorm(n);
+  const manual = !!(state.normOwned && state.normOwned[n.num]);
+  const has    = auto || manual;
+  const buy = n.buy
+    ? n.buy
+    : (n.vendor === 'crb' ? 'https://www.crb.ch' : 'https://shop.sia.ch/?s=' + encodeURIComponent(n.num));
+  const numAttr = esc(n.num).replace(/'/g, "\\'");
+
+  let status;
+  if (auto) {
+    status = '<span class="norm-status has"><i class="ti ti-file-check"></i> יש (מקובץ)</span>';
+  } else if (manual) {
+    status = `<span class="norm-status has"><i class="ti ti-check"></i> יש במשרד</span>
+              <button class="norm-toggle" onclick="toggleNormOwned('${numAttr}')">בטל סימון</button>`;
+  } else {
+    status = `<span class="norm-status missing"><i class="ti ti-x"></i> חסר</span>
+              <a class="norm-buy" href="${buy}" target="_blank">לרכישה ↗</a>
+              <button class="norm-toggle" onclick="toggleNormOwned('${numAttr}')">סמן כקיים</button>`;
+  }
+
   return `
     <div class="norm-item ${has ? 'norm-has' : 'norm-missing'}">
-      <div class="norm-num">${n.num}</div>
+      <div class="norm-num">${esc(n.num)}</div>
       <div style="flex:1">
-        <div class="norm-title">${n.title}</div>
-        <div class="norm-desc">${n.desc}</div>
+        <div class="norm-title">${esc(n.title)}${n.custom ? ' <span class="tag">מותאם</span>' : ''}</div>
+        <div class="norm-desc">${esc(n.desc || '')}</div>
       </div>
       <div class="norm-actions">
-        ${has
-          ? '<span class="norm-status has"><i class="ti ti-check"></i> יש במשרד</span>'
-          : `<span class="norm-status missing"><i class="ti ti-x"></i> חסר</span>
-             <a class="norm-buy" href="${buy}" target="_blank">לרכישה ↗</a>`}
+        ${status}
+        ${n.custom ? `<button class="norm-toggle" onclick="deleteCustomNorm(${n.id})"><i class="ti ti-trash"></i> מחק</button>` : ''}
       </div>
     </div>
   `;
 }
 
 function norms() {
-  const have = NORMS.filter(officeHasNorm).length;
+  const all = [...NORMS, ...(state.customNorms || []).map(c => ({ ...c, custom: true }))];
+  const have = all.filter(normIsOwned).length;
   const cats = [];
   const byCat = {};
-  for (const n of NORMS) {
-    if (!byCat[n.cat]) { byCat[n.cat] = []; cats.push(n.cat); }
-    byCat[n.cat].push(n);
+  for (const n of all) {
+    const cat = n.cat || 'מותאם אישית';
+    if (!byCat[cat]) { byCat[cat] = []; cats.push(cat); }
+    byCat[cat].push(n);
   }
   return `
     <div class="flex-between" style="margin-bottom:6px;">
       <div class="section-title" style="margin:0">נורמות SIA</div>
-      <span class="tag">${have}/${NORMS.length} במשרד</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="tag">${have}/${all.length} במשרד</span>
+        <button class="btn-secondary" onclick="openNormModal()"><i class="ti ti-plus"></i> הוסף נורמה</button>
+      </div>
     </div>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
-      🟢 קיים במאגר הידע של המשרד · 🔴 חסר (עם קישור לרכישה). העלה מסמכים ב"מאגר ידע" כדי לעדכן.
-      זוהי רשימה מקוצרת של הנורמות החשובות לאדריכלים — הקטלוג המלא ב-shop.sia.ch.
+      🟢 קיים במאגר הידע (זוהה מקובץ או סומן ידנית) · 🔴 חסר, עם קישור לרכישה.
+      ניתן להוסיף נורמות משלך ולסמן ידנית מה קיים במשרד. הקטלוג המלא ב-shop.sia.ch.
     </p>
     ${cats.map(c => `
-      <div class="section-title">${c}</div>
+      <div class="section-title">${esc(c)}</div>
       <div class="norm-list" style="margin-bottom:14px;">
         ${byCat[c].map(normRow).join('')}
       </div>
     `).join('')}
   `;
+}
+
+// ─── Norm ownership + custom norms ────────────────────────────────────────────
+async function toggleNormOwned(num) {
+  if (!state.normOwned) state.normOwned = {};
+  if (state.normOwned[num]) delete state.normOwned[num];
+  else state.normOwned[num] = true;
+  await saveData();
+  renderView('norms');
+}
+
+function openNormModal() {
+  document.getElementById('cn-num').value = '';
+  document.getElementById('cn-title').value = '';
+  document.getElementById('cn-desc').value = '';
+  document.getElementById('cn-cat').value = '';
+  document.getElementById('cn-buy').value = '';
+  openModal('modal-norm');
+}
+
+async function saveCustomNorm() {
+  const num = document.getElementById('cn-num').value.trim();
+  if (!num) { document.getElementById('cn-num').focus(); return; }
+  if (!state.customNorms) state.customNorms = [];
+  state.customNorms.push({
+    id:    Date.now(),
+    num,
+    title: document.getElementById('cn-title').value.trim(),
+    desc:  document.getElementById('cn-desc').value.trim(),
+    cat:   document.getElementById('cn-cat').value.trim() || 'מותאם אישית',
+    buy:   document.getElementById('cn-buy').value.trim(),
+  });
+  await saveData();
+  closeModal('modal-norm');
+  renderView('norms');
+}
+
+async function deleteCustomNorm(id) {
+  state.customNorms = (state.customNorms || []).filter(c => c.id !== id);
+  await saveData();
+  renderView('norms');
 }
 
 function gis() {
@@ -545,6 +612,9 @@ function setupButtons() {
 
   // Project advisor
   document.getElementById('btn-run-advisor').addEventListener('click', runProjectAdvisor);
+
+  // Custom norm
+  document.getElementById('btn-save-norm').addEventListener('click', saveCustomNorm);
 }
 
 // ─── Project CRUD ─────────────────────────────────────────────────────────────

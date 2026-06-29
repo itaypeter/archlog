@@ -348,6 +348,11 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-primar
 .norm-status.missing { color: #b91c1c; background: #fee2e2; }
 .norm-buy { font-size: 11px; color: var(--accent); text-decoration: none; }
 .norm-buy:hover { color: var(--accent-dark); text-decoration: underline; }
+.norm-toggle {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 11px;
+  color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 0;
+}
+.norm-toggle:hover { color: var(--accent-dark); text-decoration: underline; }
 .norm-item.norm-has     { border-color: #bbf7d0; }
 .norm-item.norm-missing { border-color: var(--border); }
 
