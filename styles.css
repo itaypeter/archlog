@@ -339,6 +339,17 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-primar
 .norm-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .norm-link  { display: inline-block; font-size: 11px; color: var(--accent); margin-top: 4px; }
 .norm-link:hover { color: var(--accent-dark); }
+.norm-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 86px; }
+.norm-status {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px;
+}
+.norm-status.has     { color: #15803d; background: #dcfce7; }
+.norm-status.missing { color: #b91c1c; background: #fee2e2; }
+.norm-buy { font-size: 11px; color: var(--accent); text-decoration: none; }
+.norm-buy:hover { color: var(--accent-dark); text-decoration: underline; }
+.norm-item.norm-has     { border-color: #bbf7d0; }
+.norm-item.norm-missing { border-color: var(--border); }
 
 /* ─── GIS ───────────────────────────────────────────────────────────────────── */
 .gis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
