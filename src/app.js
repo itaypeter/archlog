@@ -7,6 +7,28 @@ const PHASES = [
 const PHASE_PCT = [2, 7, 16, 37, 39.5, 57.5, 73.5, 88.5, 100];
 const PHASE_CLS = ['ph-0','ph-1','ph-2','ph-3','ph-4','ph-5','ph-6','ph-7','ph-8'];
 
+// Key deliverables (Leistungen) required per SIA 102 phase
+const PHASE_DELIVERABLES = [
+  // 0 — Strategische Planung
+  ['הגדרת צרכים ויעדים (Bedürfnisformulierung)', 'בדיקת היתכנות ראשונית (Machbarkeit)', 'מסגרת תקציב ולוח זמנים ראשונית'],
+  // 1 — Vorstudien
+  ['ניתוח מגרש ותקנון בנייה (Bau- und Zonenordnung)', 'מחקר מקדים ותכניות עקרון (Studien)', 'אומדן עלויות ראשוני ±25%', 'בדיקת תכנון מול Nutzungsplanung'],
+  // 2 — Vorprojekt
+  ['תכניות עקרון 1:200 (Vorprojektpläne)', 'קונספט מבני ואנרגטי (SIA 380/1)', 'אומדן עלויות ±15% (eBKP)', 'לוח זמנים מעודכן'],
+  // 3 — Bauprojekt
+  ['תכניות פרויקט 1:100 (Bauprojektpläne)', 'חישוב שטחים ונפחים (SIA 416)', 'תיאום מהנדסים (קונסטרוקציה, HLKS)', 'Kostenvoranschlag ±10%'],
+  // 4 — Baueingabe
+  ['תיק בקשת היתר (Baugesuch) לפי דרישות הקנטון', 'תכניות היתר (Eingabepläne)', 'חישובי אנרגיה ומרחקי בנייה', 'הגשה ל-Bauamt וטיפול בהתנגדויות (Einsprachen)'],
+  // 5 — Ausschreibung
+  ['כתבי כמויות / מכרז לפי NPK', 'Submission והשוואת הצעות קבלנים', 'המלצת זכייה (Vergabeantrag)'],
+  // 6 — Ausführungsplanung
+  ['תכניות ביצוע 1:50 (Ausführungspläne)', 'תכניות פרטים (Detailpläne)', 'תיאום תכניות מקצוע (Werkpläne)'],
+  // 7 — Realisierung
+  ['ניהול וביצוע באתר (Bauleitung)', 'בקרת לוח זמנים ועלויות (Kostenkontrolle)', 'פרוטוקולי אתר (Bautagebuch)', 'בקרת איכות וקבלת עבודות'],
+  // 8 — Abschluss
+  ['מסירה ללקוח (Abnahme)', 'תכניות As-Built (Revisionspläne)', 'חשבון סופי (Schlussabrechnung)', 'תיק תחזוקה ותקופת אחריות'],
+];
+
 // ─── State ──────────────────────────────────────────────────────────────────
 let state = { projects: [], logs: [], knowledge: [] };
 
@@ -302,7 +324,10 @@ function projectCard(p) {
       ${p.desc ? `<div class="card-body">${esc(p.desc.substring(0,100))}${p.desc.length>100?'...':''}</div>` : ''}
       <div class="progress-wrap">
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="progress-label">${pct.toFixed(0)}% מהפרויקט (לפי SIA 102)</div>
+        <div class="flex-between">
+          <div class="progress-label">${pct.toFixed(0)}% מהפרויקט (לפי SIA 102)</div>
+          <button class="btn-ghost-sm" onclick="openAdvisor(${p.id})"><i class="ti ti-sparkles"></i> יועץ פרויקט</button>
+        </div>
       </div>
     </div>
   `;
@@ -430,6 +455,9 @@ function setupButtons() {
   // Settings
   document.getElementById('btn-settings').addEventListener('click', openSettings);
   document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
+
+  // Project advisor
+  document.getElementById('btn-run-advisor').addEventListener('click', runProjectAdvisor);
 }
 
 // ─── Project CRUD ─────────────────────────────────────────────────────────────
@@ -698,6 +726,108 @@ function relevantKnowledge(maxChars = 4000) {
     used += snippet.length;
   }
   return out;
+}
+
+// ─── Project advisor ──────────────────────────────────────────────────────────
+let advisorId = null;
+
+function projectLogs(p) {
+  return state.logs.filter(l => l.projectName === p.name);
+}
+
+// Top knowledge-base docs to feed the advisor (no per-norm filter here)
+function projectKnowledge(maxChars = 4000) {
+  const docs = (state.knowledge || []).filter(d => d.content && d.content.length > 20);
+  let out = '', used = 0;
+  for (const d of docs.slice(0, 3)) {
+    const snippet = d.content.substring(0, 1200);
+    if (used + snippet.length > maxChars) break;
+    out += `\n--- ${d.title} ---\n${snippet}\n`;
+    used += snippet.length;
+  }
+  return out;
+}
+
+function openAdvisor(id) {
+  const p = state.projects.find(x => x.id === id);
+  if (!p) return;
+  advisorId = id;
+  const deliverables = PHASE_DELIVERABLES[p.phase] || [];
+  const logs = projectLogs(p);
+  document.getElementById('advisor-title').textContent =
+    `יועץ פרויקט · ${p.number ? p.number + ' ' : ''}${p.name}`;
+  document.getElementById('advisor-body').innerHTML = `
+    <div class="card-meta" style="margin-bottom:12px;">
+      <span class="phase-badge ${PHASE_CLS[p.phase]}">Ph.${p.phase}: ${PHASES[p.phase]}</span>
+      <span>${logs.length} תיעודים</span>
+      <span>${esc(p.canton)}</span>
+    </div>
+    <div class="section-title" style="margin-top:0">דרישות השלב הנוכחי (SIA 102)</div>
+    <ul class="advisor-checklist">
+      ${deliverables.map(d => `<li><i class="ti ti-square"></i> ${esc(d)}</li>`).join('')}
+    </ul>
+    <div class="ai-box" id="advisor-ai-box" style="display:none">
+      <div class="ai-box-title">
+        <i class="ti ti-sparkles"></i> הערכת AI
+        <span class="dot-pulse" id="advisor-spinner"></span>
+      </div>
+      <div class="ai-content" id="advisor-ai-content"></div>
+    </div>
+  `;
+  openModal('modal-advisor');
+}
+
+async function runProjectAdvisor() {
+  const p = state.projects.find(x => x.id === advisorId);
+  if (!p) return;
+  const box     = document.getElementById('advisor-ai-box');
+  const out     = document.getElementById('advisor-ai-content');
+  const spinner = document.getElementById('advisor-spinner');
+  box.style.display = 'block';
+  out.textContent = 'מנתח את הפרויקט...';
+  spinner.style.display = 'inline-block';
+
+  const deliverables = PHASE_DELIVERABLES[p.phase] || [];
+  const logs = projectLogs(p);
+  const logsText = logs.length
+    ? logs.map(l => `- [${l.date}] ${l.desc}${l.learnings ? ' (למדתי: ' + l.learnings + ')' : ''}`).join('\n')
+    : '(אין תיעודים עדיין)';
+  const kb = projectKnowledge();
+
+  const prompt = `אתה יועץ אדריכלי בכיר שעוזר למשרד בשוויץ לנהל פרויקט לפי SIA 102.
+
+פרויקט: ${p.name}${p.number ? ' (מס׳ ' + p.number + ')' : ''}, קנטון ${p.canton}, סוג ${p.type}.
+שלב נוכחי: ${p.phase} — ${PHASES[p.phase]}.
+
+הדרישות (Leistungen) של השלב הנוכחי:
+${deliverables.map(d => '- ' + d).join('\n')}
+
+תיעודי העבודה שכבר בוצעו בפרויקט:
+${logsText}
+${kb ? '\nמאגר הידע של המשרד (נורמות/מנואלים רלוונטיים):\n' + kb : ''}
+
+בהתבסס רק על מה שתועד, ענה בעברית בצורה תמציתית ומעשית:
+1. ✅ מה כבר הושלם בשלב הנוכחי
+2. ⚠️ מה עדיין חסר כדי לסיים את השלב
+3. ➡️ הצעד הבא המומלץ (פעולה אחת קונקרטית)`;
+
+  try {
+    const result = await window.archlog.analyze(prompt);
+    if (!result.ok) {
+      out.innerHTML = result.error === 'NO_API_KEY'
+        ? 'לא הוגדר מפתח API. <a href="#" id="adv-open-settings">פתח הגדרות</a>.'
+        : 'שגיאה: ' + result.error;
+      document.getElementById('adv-open-settings')?.addEventListener('click', e => {
+        e.preventDefault(); openSettings();
+      });
+      return;
+    }
+    out.textContent = result.text || 'אין תשובה.';
+  } catch (err) {
+    out.textContent = 'שגיאה בחיבור ל-AI: ' + err.message;
+  } finally {
+    spinner.style.display = 'none';
+  }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

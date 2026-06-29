@@ -382,6 +382,15 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-primar
 .empty-state i { font-size: 32px; margin-bottom: 10px; display: block; }
 .empty-state p { font-size: 13px; }
 
+/* ─── Project advisor ───────────────────────────────────────────────────────── */
+.advisor-checklist { list-style: none; padding: 0; margin: 0 0 16px; }
+.advisor-checklist li {
+  display: flex; align-items: flex-start; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-primary);
+}
+.advisor-checklist li:last-child { border-bottom: none; }
+.advisor-checklist li i { color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+
 /* ─── Utility ───────────────────────────────────────────────────────────────── */
 .mt-16 { margin-top: 16px; }
 .gap-12 { gap: 12px; }
