@@ -204,33 +204,120 @@ function knowledge() {
   `;
 }
 
-function norms() {
-  const NORMS = [
-    { num:'SIA 102', title:'Ordnung für Leistungen und Honorare der Architekten', desc:'הגדרת שלבי עבודה ושכר — הנורמה המרכזית לכל פרויקט אדריכלי', url:'https://www.sia.ch/de/dienstleistungen/sia-norm/ordnungen/102/' },
-    { num:'SIA 112', title:'Modell Bauplanung — Leistungsmodell', desc:'מודל שלבי הבנייה: Vorstudien → Projektierung → Realisierung → Bewirtschaftung', url:'https://www.sia.ch' },
-    { num:'SIA 118', title:'Allgemeine Bedingungen für Bauarbeiten', desc:'תנאים כלליים לחוזי בנייה בין אדריכל, קבלן ובעל הבית', url:'https://bmapp.ch/en/sia-118-definition-scope-template-download/' },
-    { num:'SIA 260', title:'Grundlagen der Projektierung von Tragwerken', desc:'יסודות תכנון מבנים — בסיס לכל נורמות הקונסטרוקציה', url:'https://www.sia.ch' },
-    { num:'SIA 261', title:'Einwirkungen auf Tragwerke — עומסים', desc:'עומסים על מבנים: קבועים, עשויים, רוח, שלג, רעידות אדמה', url:'https://www.sia.ch' },
-    { num:'SIA 262', title:'Betonbau — בטון', desc:'תכנון מבנה בטון — הנורמה הנפוצה ביותר בבנייה שוויצרית', url:'https://www.sia.ch' },
-    { num:'SIA 380/1', title:'Thermische Energie im Hochbau', desc:'צריכת אנרגיה בבניינים — בהתאם ל-MuKEn 2014 ותקני MINERGIE', url:'https://www.sia.ch' },
-    { num:'SIA 416', title:'Flächen und Volumen von Gebäuden', desc:'חישוב שטחים (HNF, NNF, GF) ונפחים (GV) — בסיס לשכר לפי SIA 102', url:'https://www.sia.ch' },
-    { num:'BKP / eBKP', title:'Baukostenplan — תכנון עלויות', desc:'eBKP-H לבניינים, eBKP-T לתשתיות — מקובל בכל שלבי התכנון', url:'https://www.crb.ch' },
-    { num:'NPK', title:'Normpositionen-Katalog — מכרזים', desc:'קטלוג עמדות תקניות לכתיבת Ausschreibung בשוויץ', url:'https://www.crb.ch/de/dienstleistungen/normpositionen-katalog-npk.html' },
-  ];
+// Curated set of the SIA norms most relevant to architects (not the full catalog).
+const NORMS = [
+  // Ordnungen — LHO
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 102',   title:'Ordnung für Leistungen und Honorare der Architekten', desc:'הנורמה המרכזית — שלבי עבודה ושכר אדריכלים' },
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 103',   title:'Leistungen und Honorare der Bauingenieure', desc:'שלבי עבודה ושכר למהנדסי בניין' },
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 105',   title:'Leistungen und Honorare der Landschaftsarchitekten', desc:'שלבי עבודה ושכר לאדריכלי נוף' },
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 108',   title:'Leistungen und Honorare der Ingenieure Gebäudetechnik', desc:'שכר מהנדסי מערכות (HLKSE)' },
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 112',   title:'Modell Bauplanung — Leistungsmodell', desc:'מודל שלבי התכנון: Vorstudien → Projektierung → Realisierung' },
+  { cat:'Ordnungen (LHO) — שלבי עבודה ושכר', num:'SIA 112/1', title:'Nachhaltiges Bauen — Hochbau', desc:'בנייה בת-קיימא בבנייני מגורים ומשרדים' },
+
+  // Bauausführung
+  { cat:'ביצוע וחוזים', num:'SIA 118', title:'Allgemeine Bedingungen für Bauarbeiten', desc:'תנאים כלליים לחוזי בנייה — אדריכל, קבלן ובעל הבית' },
+
+  // Tragwerke — Swisscodes
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 260', title:'Grundlagen der Projektierung von Tragwerken', desc:'יסודות תכנון מבנים — בסיס לכל נורמות הקונסטרוקציה' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 261', title:'Einwirkungen auf Tragwerke', desc:'עומסים: קבועים, שימושיים, רוח, שלג, רעידות אדמה' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 262', title:'Betonbau', desc:'תכנון מבנה בטון — הנפוצה ביותר בבנייה שוויצרית' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 263', title:'Stahlbau', desc:'תכנון מבני פלדה' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 264', title:'Stahl-Beton-Verbundbau', desc:'מבנים מורכבים פלדה-בטון' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 265', title:'Holzbau', desc:'תכנון מבני עץ' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 266', title:'Mauerwerk', desc:'תכנון מבני בנייה (לבנים/בלוקים)' },
+  { cat:'קונסטרוקציה (Swisscodes 260–267)', num:'SIA 267', title:'Geotechnik', desc:'גיאוטכניקה ויסודות' },
+
+  // Bauphysik / Energie
+  { cat:'פיזיקה ואנרגיה', num:'SIA 180',   title:'Wärmeschutz, Feuchteschutz und Raumklima', desc:'בידוד תרמי, הגנה מלחות ואקלים פנים' },
+  { cat:'פיזיקה ואנרגיה', num:'SIA 181',   title:'Schallschutz im Hochbau', desc:'בידוד אקוסטי בבניינים' },
+  { cat:'פיזיקה ואנרגיה', num:'SIA 380/1', title:'Thermische Energie im Hochbau', desc:'צריכת אנרגיה לחימום — בסיס ל-MuKEn / MINERGIE' },
+  { cat:'פיזיקה ואנרגיה', num:'SIA 380/4', title:'Elektrische Energie im Hochbau', desc:'צריכת אנרגיה חשמלית בבניין' },
+  { cat:'פיזיקה ואנרגיה', num:'SIA 382/1', title:'Lüftungs- und Klimaanlagen', desc:'מערכות אוורור ומיזוג' },
+  { cat:'פיזיקה ואנרגיה', num:'SIA 384/1', title:'Heizungsanlagen in Gebäuden', desc:'מערכות חימום' },
+
+  // Gebäudehülle
+  { cat:'מעטפת בניין', num:'SIA 271', title:'Abdichtungen im Hochbau', desc:'איטום בבנייה — גגות, מרתפים, רטוב' },
+  { cat:'מעטפת בניין', num:'SIA 279', title:'Wärmedämmstoffe', desc:'חומרי בידוד תרמי' },
+
+  // Flächen / Erhaltung
+  { cat:'שטחים ותחזוקה', num:'SIA 416', title:'Flächen und Volumen von Gebäuden', desc:'חישוב שטחים (HNF, NNF, GF) ונפחים (GV)' },
+  { cat:'שטחים ותחזוקה', num:'SIA 469', title:'Erhaltung von Bauwerken', desc:'שימור ותחזוקת מבנים קיימים' },
+
+  // Accessibility
+  { cat:'נגישות', num:'SIA 500', title:'Hindernisfreie Bauten', desc:'בנייה נגישה לאנשים עם מוגבלויות' },
+
+  // Merkblätter
+  { cat:'דפי מידע (Merkblätter)', num:'SIA 2024', title:'Raumnutzungsdaten für Energie- und Gebäudetechnik', desc:'נתוני שימוש בחללים לתכנון אנרגטי' },
+  { cat:'דפי מידע (Merkblätter)', num:'SIA 2028', title:'Klimadaten', desc:'נתוני אקלים לתכנון בנייה' },
+  { cat:'דפי מידע (Merkblätter)', num:'SIA 2040', title:'SIA-Effizienzpfad Energie', desc:'יעד אנרגיה — חברה של 2000 ואט' },
+
+  // Geodaten
+  { cat:'גאו-נתונים', num:'SIA 405', title:'Geodaten zu Leitungsnetzen', desc:'נתוני תשתיות וקווי שירות' },
+
+  // Non-SIA (CRB)
+  { cat:'CRB (לא SIA)', num:'BKP / eBKP', title:'Baukostenplan', desc:'תכנון עלויות — eBKP-H לבניינים, eBKP-T לתשתיות', vendor:'crb', match:['bkp','ebkp'] },
+  { cat:'CRB (לא SIA)', num:'NPK',        title:'Normpositionen-Katalog', desc:'קטלוג עמדות תקניות לכתיבת מכרזים', vendor:'crb', match:['npk'] },
+];
+
+// Does the office already have this norm in its knowledge base?
+function officeHasNorm(n) {
+  const docs = state.knowledge || [];
+  if (!docs.length) return false;
+  const tokens = n.match || (() => {
+    const lc = n.num.toLowerCase();              // e.g. 'sia 380/1'
+    return [lc, lc.replace(/\s+/g, '')];         // ['sia 380/1','sia380/1']
+  })();
+  return docs.some(d => {
+    const hay = ((d.title || '') + ' ' + (d.content || '')).toLowerCase();
+    return tokens.some(t => hay.includes(t));
+  });
+}
+
+function normRow(n) {
+  const has = officeHasNorm(n);
+  const buy = n.vendor === 'crb'
+    ? 'https://www.crb.ch'
+    : 'https://shop.sia.ch/?s=' + encodeURIComponent(n.num);
   return `
-    <div class="section-title">נורמות SIA — Schweizerischer Ingenieur- und Architektenverein</div>
-    <div class="norm-list">
-      ${NORMS.map(n => `
-        <div class="norm-item">
-          <div class="norm-num">${n.num}</div>
-          <div>
-            <div class="norm-title">${n.title}</div>
-            <div class="norm-desc">${n.desc}</div>
-            <a class="norm-link" href="${n.url}" target="_blank">פתח ב-sia.ch ↗</a>
-          </div>
-        </div>
-      `).join('')}
+    <div class="norm-item ${has ? 'norm-has' : 'norm-missing'}">
+      <div class="norm-num">${n.num}</div>
+      <div style="flex:1">
+        <div class="norm-title">${n.title}</div>
+        <div class="norm-desc">${n.desc}</div>
+      </div>
+      <div class="norm-actions">
+        ${has
+          ? '<span class="norm-status has"><i class="ti ti-check"></i> יש במשרד</span>'
+          : `<span class="norm-status missing"><i class="ti ti-x"></i> חסר</span>
+             <a class="norm-buy" href="${buy}" target="_blank">לרכישה ↗</a>`}
+      </div>
     </div>
+  `;
+}
+
+function norms() {
+  const have = NORMS.filter(officeHasNorm).length;
+  const cats = [];
+  const byCat = {};
+  for (const n of NORMS) {
+    if (!byCat[n.cat]) { byCat[n.cat] = []; cats.push(n.cat); }
+    byCat[n.cat].push(n);
+  }
+  return `
+    <div class="flex-between" style="margin-bottom:6px;">
+      <div class="section-title" style="margin:0">נורמות SIA</div>
+      <span class="tag">${have}/${NORMS.length} במשרד</span>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+      🟢 קיים במאגר הידע של המשרד · 🔴 חסר (עם קישור לרכישה). העלה מסמכים ב"מאגר ידע" כדי לעדכן.
+      זוהי רשימה מקוצרת של הנורמות החשובות לאדריכלים — הקטלוג המלא ב-shop.sia.ch.
+    </p>
+    ${cats.map(c => `
+      <div class="section-title">${c}</div>
+      <div class="norm-list" style="margin-bottom:14px;">
+        ${byCat[c].map(normRow).join('')}
+      </div>
+    `).join('')}
   `;
 }
 
