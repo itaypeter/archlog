@@ -286,6 +286,25 @@
   </div>
 </div>
 
+<!-- Project Advisor Modal -->
+<div class="modal-overlay" id="modal-advisor" aria-hidden="true">
+  <div class="modal" role="dialog" aria-labelledby="advisor-title">
+    <div class="modal-header">
+      <h3 id="advisor-title">יועץ פרויקט</h3>
+      <button class="modal-close" data-close="modal-advisor">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div id="advisor-body"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close="modal-advisor">סגור</button>
+      <button class="btn-primary" id="btn-run-advisor">
+        <i class="ti ti-sparkles"></i> נתח עם AI
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
