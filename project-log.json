@@ -1,12 +1,22 @@
 {
-  "lastUpdated": "2026-07-08T14:09:54.000Z",
+  "lastUpdated": "2026-07-08T20:47:00.000Z",
   "tasks": [
     {
       "id": 1,
       "title": "Write a README.md documenting ArchLog (work journal & portfolio platform for Swiss architects): what it does, Electron architecture (main.js, preload.js, src/), and how to run it locally",
-      "status": "idea",
+      "status": "done",
       "createdAt": "2026-07-08T14:09:54.000Z",
+      "completedAt": "2026-07-08T20:47:00.000Z",
       "source": "user"
+    },
+    {
+      "id": 2,
+      "title": "Expanded README.md with a features table (all 8 views: dashboard, projects, log, portfolio, knowledge, norms, gis, timeline), an AI-analysis section (Anthropic cloud vs. local Ollama), and a detailed Electron architecture section covering main.js (IPC handlers, data persistence, Obsidian vault sync, AI backends), preload.js (contextBridge security model), and src/ (renderer). To verify: open README.md at the repo root and read the new \"מה זה ArchLog?\" and \"ארכיטקטורה (Electron)\" sections.",
+      "status": "done",
+      "createdAt": "2026-07-08T20:47:00.000Z",
+      "completedAt": "2026-07-08T20:47:00.000Z",
+      "source": "claude-code",
+      "type": "note"
     }
   ]
 }
