@@ -1,0 +1,12 @@
+{
+  "lastUpdated": "2026-07-08T14:09:54.000Z",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Write a README.md documenting ArchLog (work journal & portfolio platform for Swiss architects): what it does, Electron architecture (main.js, preload.js, src/), and how to run it locally",
+      "status": "idea",
+      "createdAt": "2026-07-08T14:09:54.000Z",
+      "source": "user"
+    }
+  ]
+}
