@@ -1,6 +1,7 @@
-# Cerebrum — ArchLog
+# Learnings
 
-Read before generating code. Respect every entry.
+> Preferences, gotchas, Do-Not-Repeat rules and code-level decisions for this repo.
+> Add an entry when the user corrects you or a mistake costs time.
 
 ## User Preferences
 - **Answer in English.** The user finds reading Hebrew hard. (App UI stays Hebrew.)
